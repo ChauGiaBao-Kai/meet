@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebRTC Agora</title>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+</head>
+
+<body>
+  <h2>Phòng họp</h2>
+  <div id="local-player" style="width: 400px; height: 300px;"></div>
+  <div id="remote-player" style="width: 400px; height: 300px;"></div>
+
+  <script>
+    const APP_ID = "812df7c4460047d3aa3cc6a71f895ab0"; // thay bằng App ID của bạn
+    const CHANNEL = "test"; // tên phòng
+
+    const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+    let localTracks = [];
+
+    async function start() {
+      await client.join(APP_ID, CHANNEL, null, null);
+
+      // lấy camera + mic
+      localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+
+      // hiển thị video local
+      localTracks[1].play("local-player");
+
+      // publish lên phòng
+      await client.publish(localTracks);
+
+      console.log("Đã join phòng");
+    }
+
+    client.on("user-published", async (user, mediaType) => {
+      await client.subscribe(user, mediaType);
+
+      if (mediaType === "video") {
+        const remoteTrack = user.videoTrack;
+        remoteTrack.play("remote-player");
+      }
+
+      if (mediaType === "audio") {
+        user.audioTrack.play();
+      }
+    });
+
+    start();
+  </script>
+</body>
+</html>
